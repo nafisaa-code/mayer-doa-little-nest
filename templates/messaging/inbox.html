@@ -1,0 +1,48 @@
+{% extends "shell.html" %}
+{% load nest %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Messages</h1><p>{% if user.is_parent %}Chat with your child's teachers{% else %}Chat with families and staff{% endif %}</p></div></div>
+
+<div class="panel inbox {% if active %}has-active{% endif %}">
+  <aside class="thread-list">
+    <form method="get" style="padding:12px;border-bottom:1px solid var(--line)">
+      <div class="search">{% icon "search" "ico ico-sm" %}<input class="input" name="q" value="{{ q }}" placeholder="Search people..." aria-label="Search people"></div>
+    </form>
+    {% for t in threads %}
+      <a href="?with={{ t.user.pk }}" class="{% if active and active.pk == t.user.pk %}on{% endif %}">
+        {% user_avatar t.user 44 %}
+        <div class="grow">
+          <div class="row between" style="flex-wrap:nowrap"><b>{{ t.user.name }}</b>{% if t.last %}<span class="muted small">{{ t.last.sent_at|date:"j M" }}</span>{% endif %}</div>
+          <div class="row between" style="flex-wrap:nowrap"><span class="clip">{% if t.last %}{% if t.last.sender_id == user.pk %}You: {% endif %}{{ t.last.body }}{% else %}{{ t.user.get_role_display }}{% endif %}</span>{% if t.unread %}<span class="badge">{{ t.unread }}</span>{% endif %}</div>
+        </div>
+      </a>
+    {% empty %}
+      <div class="empty"><span class="disc">{% icon "message-square-more" %}</span><b>No contacts</b><p class="muted small">{% if q %}No one matches “{{ q }}”.{% else %}People you can message will show here.{% endif %}</p></div>
+    {% endfor %}
+  </aside>
+
+  <section class="convo">
+    {% if active %}
+      <div class="convo-head">
+        <a href="{% url 'inbox' %}" class="btn btn-ghost btn-icon convo-back" aria-label="Back to conversations">{% icon "arrow-left" %}</a>
+        {% user_avatar active 40 %}
+        <div><b>{{ active.name }}</b><p class="muted small">{{ active.get_role_display }}</p></div>
+      </div>
+      <div class="msgs" data-scroll-bottom>
+        {% for m in convo %}
+          <div class="bubble {% if m.sender_id == user.pk %}mine{% endif %}">{{ m.body|linebreaksbr }}<small>{{ m.sent_at|date:"j M, H:i" }}{% if m.sender_id == user.pk %}{% if m.read %}{% icon "check-check" "ico ico-xs" %}{% else %}{% icon "check" "ico ico-xs" %}{% endif %}{% endif %}</small></div>
+        {% empty %}
+          <div class="empty" style="margin:auto"><span class="disc">{% icon "message-square-more" %}</span><b>Say hello to {{ active.first }}</b></div>
+        {% endfor %}
+      </div>
+      <form method="post" action="{% url 'send_message' active.pk %}" class="composer">{% csrf_token %}
+        <input class="input" name="body" placeholder="Write a message..." autocomplete="off" required aria-label="Message">
+        <button class="btn btn-lg" type="submit">{% icon "send" "ico ico-sm" %} Send</button>
+      </form>
+    {% else %}
+      <div class="empty" style="margin:auto"><span class="disc">{% icon "message-square-more" %}</span><b>Select a conversation</b><p class="muted small">Pick someone on the left to start chatting.</p></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
