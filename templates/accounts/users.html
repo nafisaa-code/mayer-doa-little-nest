@@ -1,0 +1,65 @@
+{% extends "shell.html" %}
+{% load nest %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Users</h1><p>Accounts and roles across মায়ের দোয়া Little Nest</p></div>
+  <button class="btn btn-lg" data-open="add-user">{% icon "plus" %} Add user</button>
+</div>
+
+<form method="get" class="panel pad-sm row" style="margin-bottom:20px">
+  <div class="search">{% icon "search" "ico" %}<input class="input" name="q" value="{{ q }}" placeholder="Search by name or email" aria-label="Search users"></div>
+  <select class="input" name="role" style="width:180px" data-autosubmit aria-label="Role filter">
+    <option value="">All roles</option>
+    <option value="admin" {% if role == "admin" %}selected{% endif %}>Admins</option>
+    <option value="teacher" {% if role == "teacher" %}selected{% endif %}>Teachers</option>
+    <option value="parent" {% if role == "parent" %}selected{% endif %}>Parents</option>
+  </select>
+</form>
+
+<section class="panel pad-sm table-wrap rise">
+  <table class="tbl">
+    <thead><tr><th>Name</th><th>Contact</th><th>Linked</th><th>Role</th><th><span class="sr-only">Actions</span></th></tr></thead>
+    <tbody>
+    {% for r in rows %}{% with u=r.user %}
+      <tr>
+        <td><span class="who">{% user_avatar u 40 %}<b style="font-size:16px">{{ u.name }}{% if u == user %} <span class="muted small" style="font-weight:400">(you)</span>{% endif %}</b></span></td>
+        <td><span style="display:block">{{ u.email }}</span><span class="tnum muted small">{{ u.phone|default:"—" }}</span></td>
+        <td>{{ r.linked|default:"—" }}</td>
+        <td>
+          {% if u == user %}<span class="pill pill-teal">Admin</span>{% else %}
+          <form method="post" action="{% url 'user_role' u.pk %}">{% csrf_token %}
+            <select class="input" name="role" style="width:140px;min-height:40px" data-autosubmit aria-label="Role for {{ u.name }}">
+              {% for v, label in roles %}<option value="{{ v }}" {% if u.role == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+          </form>{% endif %}
+        </td>
+        <td style="text-align:right">
+          {% if u != user %}
+          <form method="post" action="{% url 'user_delete' u.pk %}" data-confirm="Delete {{ u.name }}? Their classes become unassigned and linked children lose their parent link.">{% csrf_token %}
+            <button class="icon-btn" type="submit" aria-label="Delete {{ u.name }}">{% icon "trash-2" %}</button>
+          </form>{% endif %}
+        </td>
+      </tr>
+    {% endwith %}{% empty %}
+      <tr><td colspan="5"><div class="empty"><span class="disc">{% icon "search" %}</span><b>No users match</b></div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<dialog id="add-user" {% if open_dialog %}data-autopen{% endif %}>
+  <h3>Add user</h3>
+  <p class="desc">Share the temporary password so they can log in and change it from their profile.</p>
+  <form method="post" class="stack">{% csrf_token %}
+    {% include "partials/field.html" with f=form.name %}
+    <div class="grid g2" style="gap:12px">
+      {% include "partials/field.html" with f=form.email %}
+      {% include "partials/field.html" with f=form.phone %}
+      {% include "partials/field.html" with f=form.role %}
+      {% include "partials/field.html" with f=form.password %}
+    </div>
+    <div class="dialog-foot"><button type="button" class="btn btn-outline" data-close>Cancel</button><button class="btn" type="submit">Add user</button></div>
+  </form>
+</dialog>
+{% endblock %}

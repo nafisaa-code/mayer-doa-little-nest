@@ -93,3 +93,34 @@ def profile_view(request):
                 messages.success(request, "Profile saved")
                 return redirect("profile")
     return render(request, "accounts/profile.html", {"profile_form": profile_form, "password_form": password_form})
+
+
+@admin_required
+def users_view(request):
+    q = request.GET.get("q", "").strip()
+    role = request.GET.get("role", "")
+    users = User.objects.all().order_by("role", "name")
+    if q:
+        users = users.filter(Q(name__icontains=q) | Q(email__icontains=q))
+    if role:
+        users = users.filter(role=role)
+
+    form = UserCreateForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        messages.success(request, f"{user.name} added")
+        return redirect("users")
+
+    rows = []
+    for u in users:
+        if u.is_parent:
+            linked = ", ".join(c.first_name for c in Child.objects.filter(parent=u))
+        elif u.is_teacher:
+            linked = ", ".join(c.name for c in Classroom.objects.filter(teacher=u))
+        else:
+            linked = "All"
+        rows.append({"user": u, "linked": linked})
+    return render(request, "accounts/users.html", {
+        "rows": rows, "q": q, "role": role, "form": form, "roles": User.Role.choices,
+        "open_dialog": request.method == "POST",
+    })
