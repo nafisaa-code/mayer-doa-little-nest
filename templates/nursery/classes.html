@@ -1,0 +1,44 @@
+{% extends "shell.html" %}
+{% load nest %}
+{% block title %}Classes{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Classes</h1><p>{% if user.is_admin_role %}All rooms, teachers and capacity{% else %}Your rooms for today{% endif %}</p></div>
+  {% if user.is_admin_role %}<button class="btn btn-lg" data-open="add-class">{% icon "plus" "ico ico-sm" %} Add class</button>{% endif %}
+</div>
+
+{% if cards %}
+<div class="grid g3">
+  {% for card in cards %}{% with c=card.c %}
+  <a href="{% url 'class_detail' c.pk %}" class="panel class-card rise" style="animation-delay:{{ forloop.counter0 }}0ms">
+    <div class="stripe pill-{{ c.pill_tone }}"></div>
+    <div class="row between">
+      <div><h2 style="font-size:22px">{{ c.name }} Room</h2><p class="muted">{{ c.age_group }}</p></div>
+      <span class="pill pill-{{ c.pill_tone }}">{{ card.present }} present</span>
+    </div>
+    <span class="kv">{% icon "graduation-cap" "ico ico-sm" %}{% if c.teacher %}{{ c.teacher.name }}{% else %}No teacher assigned{% endif %}</span>
+    <div>
+      <div class="row between small"><span class="muted">Enrolled</span><b class="tnum">{{ c.n }} / {{ c.capacity }}</b></div>
+      <div class="bar mt-sm"><span style="width:{{ card.fill }}%"></span></div>
+    </div>
+    <span class="kv small">{% icon "calendar-days" "ico ico-sm" %}{% if card.next %}Next: {{ card.next.time|time:"H:i" }} · {{ card.next.title }}{% else %}No more activities today{% endif %}</span>
+  </a>
+  {% endwith %}{% endfor %}
+</div>
+{% else %}
+<div class="panel"><div class="empty"><span class="disc">{% icon "graduation-cap" %}</span><b>No classes yet</b><p class="muted small">{% if user.is_admin_role %}Add your first room to start enrolling children.{% else %}An admin will assign you to a room.{% endif %}</p></div></div>
+{% endif %}
+
+{% if user.is_admin_role %}
+<dialog id="add-class" {% if open_dialog %}data-autopen{% endif %}>
+  <h3>Add a class</h3><p class="desc">Create a new room and assign a teacher.</p>
+  <form method="post" class="stack">{% csrf_token %}
+    {% include "partials/field.html" with f=form.name %}
+    <div class="grid g2" style="gap:12px">{% include "partials/field.html" with f=form.age_group %}{% include "partials/field.html" with f=form.capacity %}</div>
+    {% include "partials/field.html" with f=form.teacher %}
+    {% include "partials/field.html" with f=form.tone %}
+    <div class="dialog-foot"><button type="button" class="btn btn-outline" data-close>Cancel</button><button class="btn" type="submit">Create class</button></div>
+  </form>
+</dialog>
+{% endif %}
+{% endblock %}
