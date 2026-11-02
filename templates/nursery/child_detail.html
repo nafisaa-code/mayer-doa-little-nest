@@ -1,0 +1,179 @@
+{% extends "shell.html" %}
+{% load nest %}
+{% block title %}{{ child.full_name }}{% endblock %}
+{% block content %}
+<a class="link" href="{% url 'children' %}">{% icon "arrow-left" "ico ico-sm" %} {% if user.is_parent %}My children{% else %}Children{% endif %}</a>
+
+<section class="panel pad mt-sm rise">
+  <div class="profile-head">
+    {% child_avatar child 112 %}
+    <div style="flex:1;min-width:240px">
+      <div class="row"><h1>{{ child.full_name }}</h1>{% if is_today %}{% status_pill status att %}{% endif %}</div>
+      <div class="row mt-sm" style="gap:16px">
+        {% if child.classroom %}<span class="pill pill-{{ child.classroom.pill_tone }}">{{ child.classroom.name }} · {{ child.classroom.age_group }}</span>{% else %}<span class="pill pill-gray">Unassigned</span>{% endif %}
+        <span class="kv">{% icon "baby" "ico ico-sm" %}{{ child.age_label }} · born {{ child.birth_date|date:"j M Y" }}</span>
+        {% for a in child.allergy_list %}<span class="pill pill-red">{% icon "circle-alert" "ico ico-xs" %}Allergy: {{ a|lower }}</span>{% endfor %}
+      </div>
+      {% if child.health_notes %}<p class="mt-sm" style="color:var(--ink)"><b>Health notes:</b> {{ child.health_notes }}</p>{% endif %}
+      {% if child.parent %}
+      <div class="row mt-sm" style="gap:16px">
+        <span class="kv">{% icon "users" "ico ico-sm" %}{{ child.parent.name }}</span>
+        {% if not user.is_parent %}<span class="kv tnum">{% icon "phone" "ico ico-sm" %}{{ child.parent.phone }}</span>{% endif %}
+        {% if child.classroom.teacher and user.is_parent %}<span class="kv">{% icon "graduation-cap" "ico ico-sm" %}Teacher: {{ child.classroom.teacher.name }}</span>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="row">
+      {% if can_manage and is_today %}
+        {% if status == "in" or status == "napping" %}
+          <a class="btn btn-outline btn-lg" href="{% url 'pickup' child.pk %}">{% icon "shield-check" "ico ico-sm" %} Check out</a>
+        {% else %}
+          <form method="post" action="{% url 'check_in' child.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-lg" type="submit">Check in</button></form>
+        {% endif %}
+      {% endif %}
+      {% if not user.is_parent and child.parent %}<a class="btn btn-outline btn-lg" href="{% url 'inbox' %}?with={{ child.parent.pk }}">{% icon "message-square-more" "ico ico-sm" %} Message</a>{% endif %}
+      {% if can_manage %}<a class="btn btn-outline btn-lg" href="{% url 'child_edit' child.pk %}">{% icon "pencil" "ico ico-sm" %} Edit profile</a>{% endif %}
+    </div>
+  </div>
+</section>
+
+<div class="row between mt">
+  <nav class="tabs" aria-label="Sections">
+    <a href="?date={{ day|date:'Y-m-d' }}" class="{% if tab != 'attendance' %}on{% endif %}">Daily record</a>
+    <a href="?tab=attendance" class="{% if tab == 'attendance' %}on{% endif %}">Attendance history</a>
+  </nav>
+  {% if tab != "attendance" %}
+  <div class="stepper">
+    <a href="?date={{ prev|date:'Y-m-d' }}" aria-label="Previous day">{% icon "chevron-left" "ico ico-sm" %}</a>
+    <b>{% if is_today %}Today{% else %}{{ day|date:"D, j M" }}{% endif %}</b>
+    {% if next %}<a href="?date={{ next|date:'Y-m-d' }}" aria-label="Next day">{% icon "chevron-right" "ico ico-sm" %}</a>{% else %}<span class="off">{% icon "chevron-right" "ico ico-sm" %}</span>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if tab == "attendance" %}
+<section class="panel pad-sm mt rise table-wrap">
+  <table class="tbl">
+    <thead><tr><th>Date</th><th>Check-in</th><th>Check-out</th><th>Hours</th><th>Picked up by</th></tr></thead>
+    <tbody>
+    {% for h in history %}
+      <tr><td>{{ h.a.date|date:"D, j M Y" }}</td><td class="tnum">{{ h.a.check_in|hm }}</td><td class="tnum">{{ h.a.check_out|hm }}</td><td class="tnum">{{ h.hours }}</td><td>{{ h.a.picked_up_by|default:"—" }}</td></tr>
+    {% empty %}
+      <tr><td colspan="5"><div class="empty"><span class="disc">{% icon "calendar-days" %}</span><b>No attendance yet</b></div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% else %}
+
+<div class="grid g3 mt">
+  <section class="panel day-card rise">
+    <div class="head"><span class="disc tone-sky">{% icon "utensils" %}</span><h3 style="flex:1">Meals</h3>{% if can_manage %}<button class="btn btn-outline" data-open="log-meal">{% icon "plus" "ico ico-sm" %} Log</button>{% endif %}</div>
+    {% if rec.lunch %}<p class="big">Lunch: {{ rec.lunch.get_amount_display|lower }}</p><div class="bar"><span style="width:{{ rec.lunch.amount_pct }}%"></span></div>{% endif %}
+    <div>
+      {% for m in rec.meals.all %}
+      <div class="meal-line"><span><b>{{ m.get_meal_display }}</b> · {{ m.food }}<br><span class="muted small">{{ m.time|time:"H:i" }} · {{ m.get_amount_display }}</span></span>
+        {% if can_manage %}<form method="post" action="{% url 'meal_delete' child.pk m.pk %}">{% csrf_token %}<button class="icon-btn" aria-label="Remove meal">{% icon "x" "ico ico-sm" %}</button></form>{% endif %}</div>
+      {% empty %}<p class="muted">No meals logged.</p>{% endfor %}
+    </div>
+  </section>
+
+  <section class="panel day-card rise" style="animation-delay:60ms">
+    <div class="head"><span class="disc tone-mint">{% icon "moon" %}</span><h3 style="flex:1">Nap</h3>{% if can_manage %}<button class="btn btn-outline" data-open="log-nap">{% icon "pencil" "ico ico-sm" %} Edit</button>{% endif %}</div>
+    {% if rec.is_napping %}<p class="big">Sleeping since {{ rec.nap_start|time:"H:i" }}</p><span class="pill pill-blue"><span class="dot pulse"></span>Napping</span>
+    {% elif rec.nap_end %}<p class="big tnum">{{ rec.nap_start|time:"H:i" }} – {{ rec.nap_end|time:"H:i" }}</p><p class="muted">{{ rec.nap_minutes }} minutes{% if rec.nap_note %} · {{ rec.nap_note }}{% endif %}</p>
+    {% else %}<p class="muted">No nap logged.</p>{% endif %}
+  </section>
+
+  <section class="panel day-card rise" style="animation-delay:120ms">
+    <div class="head"><span class="disc tone-sand">{% icon "smile" %}</span><h3 style="flex:1">Mood</h3>{% if can_manage %}<button class="btn btn-outline" data-open="set-mood">{% icon "pencil" "ico ico-sm" %} Set</button>{% endif %}</div>
+    {% if rec.mood %}<p class="big">{{ rec.get_mood_display }}</p><p class="muted">{{ rec.mood_note }}</p>{% else %}<p class="muted">Not set.</p>{% endif %}
+  </section>
+</div>
+
+<div class="grid g2 xl mt">
+  <section class="panel pad rise">
+    <div class="panel-title"><h2>{% icon "notebook-pen" %}Teacher notes</h2>{% if rec.notes_updated_at %}<span class="muted small">{{ rec.notes_by.name }} · {{ rec.notes_updated_at|time:"H:i" }}</span>{% endif %}</div>
+    {% if can_manage %}
+      <form method="post" action="{% url 'notes_save' child.pk %}" class="stack">{% csrf_token %}
+        <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+        <textarea class="input" name="notes" rows="5" placeholder="How was {{ child.first_name }}'s day?">{{ rec.notes }}</textarea>
+        <div><button class="btn" type="submit">Save notes</button></div>
+      </form>
+    {% else %}
+      {% if rec.notes %}<p style="font-size:17px">{{ rec.notes }}</p>{% else %}<p class="muted">No notes for this day.</p>{% endif %}
+    {% endif %}
+  </section>
+
+  <section class="panel pad rise">
+    <div class="panel-title"><h2>{% icon "camera" %}Photos & videos</h2><span class="muted small">{{ media|length }} item{{ media|length|pluralize }}</span></div>
+    <div class="media-grid">
+      {% for m in media %}
+        <button type="button" data-open="media-{{ m.pk }}" aria-label="Open {{ m.caption|default:'photo' }}">
+          {% if m.kind == "image" %}<img src="{{ m.file.url }}" alt="{{ m.caption }}" loading="lazy">{% else %}<video src="{{ m.file.url }}" muted preload="metadata"></video><span class="play">{% icon "play" "ico ico-lg" %}</span>{% endif %}
+        </button>
+      {% endfor %}
+      {% if can_manage %}
+      <form method="post" action="{% url 'media_upload' child.pk %}" enctype="multipart/form-data">{% csrf_token %}
+        <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+        <label class="upload-tile">{% icon "upload" "ico ico-lg" %}Upload<input type="file" name="files" accept="image/*,video/*" multiple data-upload class="sr-only"></label>
+      </form>
+      {% endif %}
+    </div>
+    {% if not media and not can_manage %}<p class="muted">No photos for this day.</p>{% endif %}
+  </section>
+</div>
+
+{% for m in media %}
+<dialog id="media-{{ m.pk }}" class="lightbox">
+  <button class="btn btn-ghost btn-icon dialog-x" data-close aria-label="Close">{% icon "x" %}</button>
+  {% if m.kind == "image" %}<img src="{{ m.file.url }}" alt="{{ m.caption }}">{% else %}<video src="{{ m.file.url }}" controls playsinline></video>{% endif %}
+  {% if can_manage %}
+  <form method="post" action="{% url 'media_update' child.pk m.pk %}" class="row mt">{% csrf_token %}
+    <input class="input" name="caption" value="{{ m.caption }}" placeholder="Add a caption" style="flex:1" aria-label="Caption">
+    <button class="btn" type="submit" name="action" value="save">Save</button>
+    <button class="btn btn-outline" type="submit" name="action" value="delete" onclick="return confirm('Delete this item?')" style="color:var(--coral)">{% icon "trash-2" "ico ico-sm" %}</button>
+  </form>
+  {% else %}<p class="mt">{{ m.caption }}</p>{% endif %}
+  <p class="muted small mt-sm">{{ m.created_at|date:"j M, H:i" }}{% if m.uploaded_by %} · {{ m.uploaded_by.name }}{% endif %}</p>
+</dialog>
+{% endfor %}
+
+{% if can_manage %}
+<dialog id="log-meal">
+  <h3>Log a meal</h3><p class="desc">For {{ child.first_name }} · {{ day|date:"j M" }}</p>
+  <form method="post" action="{% url 'meal_add' child.pk %}" class="stack">{% csrf_token %}
+    <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+    <div class="grid g2" style="gap:12px">{% include "partials/field.html" with f=meal_form.meal %}{% include "partials/field.html" with f=meal_form.time %}</div>
+    {% include "partials/field.html" with f=meal_form.food %}
+    {% include "partials/field.html" with f=meal_form.amount %}
+    <div class="dialog-foot"><button type="button" class="btn btn-outline" data-close>Cancel</button><button class="btn" type="submit">Save meal</button></div>
+  </form>
+</dialog>
+
+<dialog id="log-nap">
+  <h3>Nap</h3><p class="desc">Leave the end empty while {{ child.first_name }} is still sleeping.</p>
+  <form method="post" action="{% url 'nap_set' child.pk %}" class="stack">{% csrf_token %}
+    <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+    <div class="grid g2" style="gap:12px">{% include "partials/field.html" with f=nap_form.nap_start %}{% include "partials/field.html" with f=nap_form.nap_end %}</div>
+    {% include "partials/field.html" with f=nap_form.nap_note %}
+    <div class="dialog-foot"><button type="button" class="btn btn-outline" data-close>Cancel</button><button class="btn" type="submit">Save nap</button></div>
+  </form>
+</dialog>
+
+<dialog id="set-mood">
+  <h3>How is {{ child.first_name }} feeling?</h3><p class="desc">{{ day|date:"j M" }}</p>
+  <form method="post" action="{% url 'mood_set' child.pk %}" class="stack">{% csrf_token %}
+    <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+    <div class="moods">
+      {% for v, label in moods %}
+      <label><input type="radio" name="mood" value="{{ v }}" {% if rec.mood == v %}checked{% endif %}><span class="em">{% if v == "happy" %}😊{% elif v == "calm" %}😌{% elif v == "tired" %}😴{% elif v == "fussy" %}😣{% else %}😢{% endif %}</span>{{ label }}</label>
+      {% endfor %}
+    </div>
+    <div class="field"><label for="mood_note">Note (optional)</label><input id="mood_note" name="mood_note" value="{{ rec.mood_note }}" maxlength="200"></div>
+    <div class="dialog-foot"><button type="button" class="btn btn-outline" data-close>Cancel</button><button class="btn" type="submit">Save mood</button></div>
+  </form>
+</dialog>
+{% endif %}
+{% endif %}
+{% endblock %}
