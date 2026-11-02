@@ -1,0 +1,22 @@
+{% extends "shell.html" %}
+{% load nest %}
+{% block title %}{% if child %}Edit {{ child.first_name }}{% else %}Add child{% endif %}{% endblock %}
+{% block content %}
+<a class="link" href="{% if child %}{% url 'child_detail' child.pk %}{% else %}{% url 'children' %}{% endif %}">{% icon "arrow-left" "ico ico-sm" %} Back</a>
+<div class="page-head mt-sm"><div><h1>{% if child %}Edit {{ child.full_name }}{% else %}Add a child{% endif %}</h1><p>Profile, class, parent link and health information</p></div></div>
+<form method="post" enctype="multipart/form-data" class="panel pad stack rise" style="max-width:768px">
+  {% csrf_token %}
+  {% if child %}<div class="row" style="gap:16px">{% child_avatar child 72 %}<p class="muted small">Upload a new photo below to replace it.</p></div>{% endif %}
+  <div class="grid g2" style="gap:12px">
+    {% include "partials/field.html" with f=form.first_name %}
+    {% include "partials/field.html" with f=form.last_name %}
+    {% include "partials/field.html" with f=form.birth_date %}
+    {% include "partials/field.html" with f=form.photo %}
+    {% if form.classroom %}{% include "partials/field.html" with f=form.classroom %}{% endif %}
+    {% if form.parent %}{% include "partials/field.html" with f=form.parent %}{% endif %}
+  </div>
+  {% include "partials/field.html" with f=form.allergies %}
+  {% include "partials/field.html" with f=form.health_notes %}
+  <div class="row"><button class="btn btn-lg" type="submit">{% if child %}Save changes{% else %}Add child{% endif %}</button><a class="btn btn-outline btn-lg" href="{% if child %}{% url 'child_detail' child.pk %}{% else %}{% url 'children' %}{% endif %}">Cancel</a></div>
+</form>
+{% endblock %}
