@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static nest %}
+{% block body %}
+<div class="auth">
+  <section class="auth-brand">
+    <a href="/" class="brand" style="position:relative;z-index:1"><img src="{% static 'img/icon.png' %}" alt=""><span><b>মায়ের দোয়া Little Nest</b><small>Brighter days together</small></span></a>
+    <div style="position:relative;z-index:1">
+      <h1>Every little moment, safely shared.</h1>
+      <p>Attendance, meals, naps, photos and secure pickup — one calm place for teachers and families.</p>
+      <ul class="auth-feats">
+        <li><span class="ic">{% icon "shield-check" %}</span>OTP-verified pickup for every child</li>
+        <li><span class="ic">{% icon "camera" %}</span>Photos and notes from the classroom</li>
+        <li><span class="ic">{% icon "lightbulb" %}</span>A smart daily insight for staff</li>
+      </ul>
+    </div>
+    <p class="small" style="position:relative;z-index:1;opacity:.75">© মায়ের দোয়া Little Nest Daycare, Dhaka</p>
+  </section>
+  <section class="auth-form"><div class="auth-card rise">{% block card %}{% endblock %}</div></section>
+</div>
+{% endblock %}

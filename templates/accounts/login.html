@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load nest %}
+{% block title %}Log in{% endblock %}
+{% block body %}
+<div class="auth">
+  {% include "accounts/_auth_brand.html" %}
+  <section class="auth-form">
+    <div class="auth-card rise">
+      <h2>Welcome back</h2>
+      <p class="muted mt-sm">Log in to see today at মায়ের দোয়া Little Nest.</p>
+      <form method="post" class="stack mt" id="login-form" novalidate>
+        {% csrf_token %}
+        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" value="{{ form.email.value|default:'' }}" required></div>
+        <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
+        {% if form.non_field_errors %}<p class="form-error" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+        {% if form.email.errors %}<p class="form-error" role="alert">Enter a valid email.</p>{% endif %}
+        <button class="btn btn-lg btn-block" type="submit">Log in</button>
+      </form>
+      <div class="divider">Try a demo account · password {{ demo_password }}</div>
+      <div class="demo">
+        {% for d in demo %}
+        <button type="button" onclick="document.getElementById('email').value='{{ d.email }}';document.getElementById('password').value='{{ demo_password }}';document.getElementById('login-form').submit();">
+          <span class="avatar tone-teal" style="width:40px;height:40px;font-size:14px;box-shadow:none">{{ d.initials }}</span>
+          <span style="flex:1"><b>{{ d.name }}</b><span class="muted small">{{ d.email }}</span></span>
+          <span class="pill pill-teal">{{ d.label }}</span>
+        </button>
+        {% endfor %}
+      </div>
+      <p class="muted mt" style="text-align:center">New family? <a class="link" href="{% url 'register' %}" style="font-size:16px">Create a parent account</a></p>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% load static nest %}
+<section class="auth-brand">
+  <a href="{% url 'login' %}" class="brand" style="position:relative;z-index:1"><img src="{% static 'img/icon.png' %}" alt=""><span><b>মায়ের দোয়া Little Nest</b><small>Brighter days together</small></span></a>
+  <div style="position:relative;z-index:1">
+    <h1>Every nap, meal and smile — shared safely.</h1>
+    <p>Daily records, secure pickup and family messaging for your daycare, in one calm place.</p>
+    <ul class="auth-feats">
+      <li><span class="ic">{% icon "shield-check" "ico" %}</span>OTP-verified pickup to the parent's phone</li>
+      <li><span class="ic">{% icon "notebook-pen" "ico" %}</span>Meals, naps, mood and notes in seconds</li>
+      <li><span class="ic">{% icon "message-square-more" "ico" %}</span>Photos and messages, straight to families</li>
+    </ul>
+  </div>
+  <p class="small" style="position:relative;z-index:1;margin:0;font-size:14px">© মায়ের দোয়া Little Nest Daycare · Dhaka</p>
+</section>

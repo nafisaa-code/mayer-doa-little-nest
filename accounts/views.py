@@ -35,3 +35,27 @@ def role_required(*roles):
 staff_required = role_required("teacher", "admin")
 
 admin_required = role_required("admin")
+
+
+DEMO_ACCOUNTS = [
+    {"label": "Teacher", "name": "Nusrat Jahan", "initials": "NJ", "email": "nusrat@littlenest.app"},
+    {"label": "Parent", "name": "Sadia Chowdhury", "initials": "SC", "email": "sadia@example.com"},
+    {"label": "Admin", "name": "Farhana Rahman", "initials": "FR", "email": "admin@littlenest.app"},
+]
+DEMO_PASSWORD = "nest1234"
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+    form = LoginForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        login(request, form.user)
+        return redirect(request.GET.get("next") or "dashboard")
+    return render(request, "accounts/login.html", {"form": form, "demo": DEMO_ACCOUNTS, "demo_password": DEMO_PASSWORD})
+
+
+@require_POST
+def logout_view(request):
+    logout(request)
+    return redirect("login")
