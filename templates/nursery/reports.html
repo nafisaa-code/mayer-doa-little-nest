@@ -51,3 +51,29 @@
     </div>
   </section>
 </div>
+
+
+<section class="panel pad-sm mt rise" style="animation-delay:160ms">
+  <div class="panel-title" style="padding:4px 4px 0"><h2>{% icon "notebook-pen" %}Per child</h2></div>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Child</th><th>Status</th><th>In</th><th>Out</th><th>Lunch</th><th>Nap</th><th>Mood</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td><a class="who" href="{% url 'child_detail' r.child.pk %}?date={{ day|date:'Y-m-d' }}">{% child_avatar r.child 36 %}<b>{{ r.child.full_name }}</b></a></td>
+          <td>{% status_pill r.status r.att %}</td>
+          <td class="tnum">{{ r.att.check_in|hm }}</td>
+          <td class="tnum">{{ r.att.check_out|hm }}</td>
+          <td>{% if r.rec.lunch %}{{ r.rec.lunch.get_amount_display }}{% else %}—{% endif %}</td>
+          <td class="tnum">{% if r.rec.nap_minutes %}{{ r.rec.nap_minutes }} min{% elif r.rec.is_napping %}Napping{% else %}—{% endif %}</td>
+          <td>{{ r.rec.get_mood_display|default:"—" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7"><div class="empty"><span class="disc">{% icon "users" %}</span><b>No children in scope</b></div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
