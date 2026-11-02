@@ -124,3 +124,28 @@ def users_view(request):
         "rows": rows, "q": q, "role": role, "form": form, "roles": User.Role.choices,
         "open_dialog": request.method == "POST",
     })
+
+
+@admin_required
+@require_POST
+def user_role_view(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    role = request.POST.get("role")
+    if user != request.user and role in User.Role.values:
+        user.role = role
+        user.save(update_fields=["role"])
+        messages.success(request, f"{user.name} is now {user.get_role_display().lower()}")
+    return redirect("users")
+
+
+@admin_required
+@require_POST
+def user_delete_view(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    if user != request.user:
+        user.delete()
+        messages.success(request, "User deleted")
+    return redirect("users")
+
+
+
