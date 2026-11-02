@@ -44,3 +44,23 @@
       <p class="muted small">Code expires at {{ otp.expires_at|time:"H:i" }} · {{ otp.attempts }} of 5 attempts used · <a class="link" href="?choose=1">Use {% if otp.channel == "email" %}phone{% else %}email{% endif %} instead</a></p>
     {% endif %}
   </section>
+
+  
+  <section class="panel pad-sm rise" style="animation-delay:80ms">
+    <div class="panel-title" style="padding:4px 4px 0"><h2>{% icon "clock" %}Recent pickups</h2></div>
+    <div class="table-wrap">
+      <table class="tbl" style="min-width:520px">
+        <thead><tr><th>Child</th><th>Date</th><th>Time</th><th>Picked up by</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for p in recent %}
+          <tr><td><span class="who">{% child_avatar p.child 32 %}{{ p.child.first_name }}</span></td><td>{{ p.date|date:"j M" }}</td><td class="tnum">{{ p.time|time:"H:i" }}</td><td>{{ p.picked_up_by }}</td><td><span class="pill pill-green">{% icon "check" "ico ico-xs" %}Verified</span></td></tr>
+        {% empty %}
+          <tr><td colspan="5" class="muted">No pickups yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
