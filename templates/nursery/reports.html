@@ -21,3 +21,10 @@
     <button class="btn btn-outline btn-lg" type="button" onclick="window.print()">{% icon "printer" "ico ico-sm" %} Print</button>
   </div>
 </div>
+
+<div class="grid g4">
+  <div class="panel stat rise"><span class="disc tone-mint">{% icon "users" "ico ico-lg" %}</span><div><p>Attendance</p><strong>{{ s.present }}/{{ s.expected }}</strong></div></div>
+  <div class="panel stat rise" style="animation-delay:60ms"><span class="disc tone-sky">{% icon "utensils" "ico ico-lg" %}</span><div><p>Meals logged</p><strong>{{ s.meals_logged }}</strong></div></div>
+  <div class="panel stat rise" style="animation-delay:120ms"><span class="disc tone-mint">{% icon "moon" "ico ico-lg" %}</span><div><p>Average nap</p><strong>{% if s.avg_nap %}{{ s.avg_nap }} min{% else %}—{% endif %}</strong></div></div>
+  <div class="panel stat rise" style="animation-delay:180ms"><span class="disc tone-sand">{% icon "calendar-days" "ico ico-lg" %}</span><div><p>Activities</p><strong>{{ s.activities }}</strong></div></div>
+</div>
