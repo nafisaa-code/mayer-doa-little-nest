@@ -55,6 +55,18 @@ def login_view(request):
     return render(request, "accounts/login.html", {"form": form, "demo": DEMO_ACCOUNTS, "demo_password": DEMO_PASSWORD})
 
 
+def register_view(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+    form = RegisterForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        messages.success(request, f"Welcome to মায়ের দোয়া Little Nest, {user.first}!")
+        return redirect("dashboard")
+    return render(request, "accounts/register.html", {"form": form})
+
+
 @require_POST
 def logout_view(request):
     logout(request)

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load nest %}
+{% block title %}Create account{% endblock %}
+{% block body %}
+<div class="auth">
+  {% include "accounts/_auth_brand.html" %}
+  <section class="auth-form">
+    <div class="auth-card rise">
+      <h2>Create your family account</h2>
+      <p class="muted mt-sm">Staff accounts are created by your daycare admin.</p>
+      <form method="post" class="stack mt" novalidate>
+        {% csrf_token %}
+        <div class="field"><label for="id_name">Full name</label><input id="id_name" name="name" value="{{ form.name.value|default:'' }}" autocomplete="name" placeholder="e.g. Sadia Chowdhury" required>{{ form.name.errors }}</div>
+        <div class="field"><label for="id_email">Email</label><input id="id_email" name="email" type="email" value="{{ form.email.value|default:'' }}" autocomplete="email" required>{{ form.email.errors }}</div>
+        <div class="field"><label for="id_phone">Mobile phone</label><input id="id_phone" name="phone" type="tel" value="{{ form.phone.value|default:'' }}" autocomplete="tel" placeholder="+880 1711-000000" required><span class="help">Pickup codes are sent to this number.</span>{{ form.phone.errors }}</div>
+        <div class="field"><label for="id_password">Password</label><input id="id_password" name="password" type="password" autocomplete="new-password" minlength="8" required><span class="help">At least 8 characters.</span>{{ form.password.errors }}</div>
+        <button class="btn btn-lg btn-block" type="submit">Create account</button>
+      </form>
+      <p class="muted mt" style="text-align:center">Already have an account? <a class="link" href="{% url 'login' %}" style="font-size:16px">Log in</a></p>
+    </div>
+  </section>
+</div>
+{% endblock %}
