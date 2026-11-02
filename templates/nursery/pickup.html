@@ -1,0 +1,46 @@
+{% extends "shell.html" %}
+{% load nest %}
+{% block title %}Pickup · {{ child.first_name }}{% endblock %}
+{% block content %}
+<a class="link" href="{% url 'dashboard' %}">{% icon "arrow-left" "ico ico-sm" %} Dashboard</a>
+<div class="page-head mt-sm"><div><h1>Secure pickup</h1><p>Send a one-time code to the parent by phone or email, then verify it before checking out</p></div></div>
+
+<div class="pickup-wrap">
+  <section class="panel pad rise" style="text-align:center">
+    <div style="display:flex;justify-content:center">{% child_avatar child 88 %}</div>
+    <h2 style="font-size:22px;margin-top:12px">{{ child.full_name }}</h2>
+    <p class="muted">{% if child.classroom %}{{ child.classroom.name }} Room · {% endif %}Parent: {{ child.parent.name }}</p>
+    {% if choosing %}
+      <p class="muted mt">Where should we send the 6-digit code? Ask the person collecting {{ child.first_name }} to read it out.</p>
+      <form method="post" class="stack mt" style="text-align:left">{% csrf_token %}<input type="hidden" name="action" value="send">
+        <button class="channel-opt" type="submit" name="channel" value="phone" {% if not masked_phone %}disabled{% endif %}>
+          <span class="channel-ico">{% icon "phone" "ico" %}</span>
+          <span class="channel-txt"><b>Text message <span class="tag">Demo</span></b><span class="tnum">{{ masked_phone|default:"No phone on file" }}</span></span>
+          {% icon "chevron-right" "ico ico-sm muted" %}
+        </button>
+        <button class="channel-opt" type="submit" name="channel" value="email" data-sending="Sending email…" {% if not masked_email %}disabled{% endif %}>
+          <span class="channel-ico">{% icon "mail" "ico" %}</span>
+          <span class="channel-txt"><b>Email</b><span>{{ masked_email|default:"No email on file" }}</span></span>
+          {% icon "chevron-right" "ico ico-sm muted" %}
+        </button>
+      </form>
+      {% if error %}<p class="form-error mt-sm" role="alert">{{ error }}</p>{% endif %}
+      {% if otp %}<p class="mt-sm"><a class="link" href="{% url 'pickup' child.pk %}">Back to code entry</a></p>{% endif %}
+    {% else %}
+      <p class="mt"><span class="phone-chip">{% if otp.channel == "email" %}{% icon "mail" "ico ico-sm" %}{{ masked_email }}{% else %}{% icon "phone" "ico ico-sm" %}{{ masked_phone }}{% endif %}</span></p>
+      <form method="post" class="stack mt" style="text-align:left">{% csrf_token %}
+        <input type="hidden" name="action" value="verify">
+        <label class="label" style="display:block;text-align:center">Enter the 6-digit code</label>
+        <div class="otp {% if error %}shake{% endif %}" role="group" aria-label="Pickup code">
+          {% for i in digits %}<input name="d" inputmode="numeric" autocomplete="one-time-code" maxlength="1" pattern="[0-9]" aria-label="Digit {{ forloop.counter }}" {% if forloop.first %}autofocus{% endif %}>{% endfor %}
+        </div>
+        {% if error %}<p class="form-error" role="alert" style="text-align:center">{{ error }}</p>{% endif %}
+        <div class="field"><label for="by">Picked up by</label><input id="by" name="picked_up_by" value="{{ child.parent.name }}" placeholder="Name of the person collecting"></div>
+        <button class="btn btn-lg btn-block" type="submit" data-verify>{% icon "shield-check" "ico ico-sm" %} Verify and check out</button>
+      </form>
+      <form method="post" class="mt-sm">{% csrf_token %}<input type="hidden" name="action" value="send"><input type="hidden" name="channel" value="{{ otp.channel }}">
+        <button class="btn btn-ghost btn-block" type="submit" data-countdown="{{ resend_in }}" data-label="Resend code">Resend code</button>
+      </form>
+      <p class="muted small">Code expires at {{ otp.expires_at|time:"H:i" }} · {{ otp.attempts }} of 5 attempts used · <a class="link" href="?choose=1">Use {% if otp.channel == "email" %}phone{% else %}email{% endif %} instead</a></p>
+    {% endif %}
+  </section>
