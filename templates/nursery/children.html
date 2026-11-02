@@ -1,0 +1,70 @@
+{% extends "shell.html" %}
+{% load nest %}
+{% block title %}Children{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{% if user.is_parent %}My children{% else %}Children{% endif %}</h1><p>{{ page.paginator.count }} {% if page.paginator.count == 1 %}child{% else %}children{% endif %}</p></div>
+  {% if user.is_admin_role %}<a class="btn btn-lg" href="{% url 'child_create' %}">{% icon "plus" %} Add child</a>{% endif %}
+</div>
+
+{% if not user.is_parent %}
+<form method="get" class="panel pad-sm row" style="margin-bottom:20px">
+  <input type="hidden" name="sort" value="{{ sort }}">
+  <div class="search">{% icon "search" "ico" %}<input class="input" name="q" value="{{ q }}" placeholder="Search by child or parent name" aria-label="Search"></div>
+  <select class="input" name="room" style="width:190px" data-autosubmit aria-label="Class filter">
+    <option value="">All classes</option>
+    {% for c in classes %}<option value="{{ c.pk }}" {% if room == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    {% if user.is_admin_role %}<option value="none" {% if room == "none" %}selected{% endif %}>Unassigned</option>{% endif %}
+  </select>
+</form>
+{% endif %}
+
+<section class="panel pad-sm rise">
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr>
+        <th><a href="?q={{ q }}&room={{ room }}&sort={% if sort == 'name' %}-name{% else %}name{% endif %}">Name {% if sort == "name" or sort == "-name" %}<small>{% if sort == "name" %}▲{% else %}▼{% endif %}</small>{% endif %}</a></th>
+        <th><a href="?q={{ q }}&room={{ room }}&sort={% if sort == 'age' %}-age{% else %}age{% endif %}">Age {% if sort == "age" or sort == "-age" %}<small>{% if sort == "age" %}▲{% else %}▼{% endif %}</small>{% endif %}</a></th>
+        <th><a href="?q={{ q }}&room={{ room }}&sort=class">Class</a></th>
+        <th>Parent</th><th>Allergies</th><th><span class="sr-only">Actions</span></th>
+      </tr></thead>
+      <tbody>
+      {% for c in page %}
+        <tr>
+          <td><a class="who" href="{% url 'child_detail' c.pk %}">{% child_avatar c 44 %}<b style="font-size:16px">{{ c.full_name }}</b></a></td>
+          <td class="tnum">{{ c.age_label }}</td>
+          <td>{% if c.classroom %}<span class="pill pill-{{ c.classroom.pill_tone }}">{{ c.classroom.name }}</span>{% else %}<span class="pill pill-gray">Unassigned</span>{% endif %}</td>
+          <td>{% if c.parent %}<span style="display:block">{{ c.parent.name }}</span><span class="muted small tnum">{{ c.parent.phone }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td><span class="row">{% for a in c.allergy_list %}<span class="pill pill-red">{{ a }}</span>{% empty %}<span class="muted">None</span>{% endfor %}</span></td>
+          <td style="text-align:right">
+            <div class="row" style="justify-content:flex-end;flex-wrap:nowrap">
+              <a class="btn btn-outline" href="{% url 'child_detail' c.pk %}">View</a>
+              {% if user.is_admin_role %}
+              <details class="menu"><summary class="btn btn-ghost btn-icon" aria-label="More for {{ c.first_name }}">{% icon "ellipsis" %}</summary>
+                <div class="menu-list">
+                  <a href="{% url 'child_edit' c.pk %}">{% icon "pencil" "ico ico-sm" %}Edit profile</a>
+                  <form method="post" action="{% url 'child_delete' c.pk %}" data-confirm="Remove {{ c.full_name }} and all their records?">{% csrf_token %}<button type="submit" style="color:var(--coral)">{% icon "trash-2" "ico ico-sm" %}Remove</button></form>
+                </div>
+              </details>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6"><div class="empty"><span class="disc">{% icon "users" %}</span><b>No children found</b><p class="muted small">Try a different search or class.</p></div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <div class="pager">
+    <span>Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count }}</span>
+    <span class="row">
+      {% if page.has_previous %}<a class="btn btn-outline" href="?{{ qs }}&page={{ page.previous_page_number }}">{% icon "chevron-left" "ico ico-sm" %} Previous</a>{% endif %}
+      <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+      {% if page.has_next %}<a class="btn btn-outline" href="?{{ qs }}&page={{ page.next_page_number }}">Next {% icon "chevron-right" "ico ico-sm" %}</a>{% endif %}
+    </span>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
