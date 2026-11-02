@@ -1,0 +1,108 @@
+{% extends "shell.html" %}
+{% load nest %}
+{% block title %}{{ c.name }} Room{% endblock %}
+{% block content %}
+<a class="link" href="{% url 'classes' %}">{% icon "arrow-left" "ico ico-sm" %} Classes</a>
+<div class="page-head mt-sm">
+  <div>
+    <h1>{{ c.name }} Room</h1>
+    <p>{{ c.age_group }} · {% if c.teacher %}{{ c.teacher.name }}{% else %}No teacher assigned{% endif %} · {{ roster|length }}/{{ c.capacity }} enrolled</p>
+  </div>
+  {% if is_admin %}
+  <div class="row">
+    <button class="btn btn-outline btn-lg" data-open="edit-class">{% icon "pencil" "ico ico-sm" %} Edit</button>
+    <form method="post" data-confirm="Delete {{ c.name }} Room? Children will become unassigned.">{% csrf_token %}
+      <button class="btn btn-outline btn-lg" name="action" value="delete" style="color:var(--coral)">{% icon "trash-2" "ico ico-sm" %} Delete</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<div class="grid g2 xl">
+  <section class="panel pad-sm rise">
+    <div class="panel-title" style="padding:4px 4px 0">
+      <h2>{% icon "users" %}Roster</h2>
+      <span class="muted small tnum">{{ fill }}% full</span>
+    </div>
+    <div class="bar" style="margin:0 4px 12px"><span style="width:{{ fill }}%"></span></div>
+    {% if roster %}
+    <div class="table-wrap">
+      <table class="tbl" style="min-width:420px">
+        <thead><tr><th>Child</th><th>Today</th>{% if is_admin %}<th></th>{% endif %}</tr></thead>
+        <tbody>
+        {% for r in roster %}
+          <tr>
+            <td><a class="who" href="{% url 'child_detail' r.child.pk %}">{% child_avatar r.child 40 %}<span><b>{{ r.child.full_name }}</b><span class="muted small">{{ r.child.age_label }}</span></span></a></td>
+            <td>{% status_pill r.status r.att %}</td>
+            {% if is_admin %}<td style="text-align:right">
+              <form method="post" data-confirm="Remove {{ r.child.first_name }} from {{ c.name }}?">{% csrf_token %}<input type="hidden" name="child" value="{{ r.child.pk }}">
+                <button class="icon-btn" name="action" value="unenroll" aria-label="Remove {{ r.child.first_name }}">{% icon "x" "ico ico-sm" %}</button></form>
+            </td>{% endif %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><span class="disc">{% icon "baby" %}</span><b>No children enrolled</b></div>
+    {% endif %}
+    {% if is_admin and candidates %}
+    <form method="post" class="row mt" style="padding:0 4px 4px">{% csrf_token %}
+      <select class="input" name="child" style="flex:1" aria-label="Child to enroll">
+        {% for ch in candidates %}<option value="{{ ch.pk }}">{{ ch.full_name }}{% if ch.classroom %} ({{ ch.classroom.name }}){% endif %}</option>{% endfor %}
+      </select>
+      <button class="btn" name="action" value="enroll">{% icon "plus" "ico ico-sm" %} Enroll</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section class="panel pad rise" style="animation-delay:80ms">
+    <div class="panel-title">
+      <h2>{% icon "calendar-days" %}Schedule</h2>
+      <div class="stepper">
+        <a href="?date={{ prev|date:'Y-m-d' }}" aria-label="Previous day">{% icon "chevron-left" "ico ico-sm" %}</a>
+        <b>{{ day|date:"D, j M" }}</b>
+        <a href="?date={{ next|date:'Y-m-d' }}" aria-label="Next day">{% icon "chevron-right" "ico ico-sm" %}</a>
+      </div>
+    </div>
+    {% if activities %}
+    <ol class="timeline">
+      {% for a in activities %}
+      <li><span class="node"></span><span class="tm">{{ a.time|time:"H:i" }}</span>
+        <div class="row between" style="align-items:flex-start;flex-wrap:nowrap">
+          <div><b>{{ a.title }}</b><p class="muted">{{ a.description }}</p></div>
+          {% if can_plan %}<form method="post" action="?date={{ day|date:'Y-m-d' }}">{% csrf_token %}<input type="hidden" name="activity" value="{{ a.pk }}">
+            <button class="icon-btn" name="action" value="delete_activity" aria-label="Delete {{ a.title }}">{% icon "x" "ico ico-sm" %}</button></form>{% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <div class="empty"><span class="disc">{% icon "calendar-days" %}</span><b>Nothing planned</b></div>
+    {% endif %}
+    {% if can_plan %}
+    <hr class="rule">
+    <form method="post" action="?date={{ day|date:'Y-m-d' }}" class="stack">{% csrf_token %}
+      <input type="hidden" name="action" value="add_activity">
+      <div class="grid g2" style="gap:12px;grid-template-columns:140px 1fr">{% include "partials/field.html" with f=activity_form.time %}{% include "partials/field.html" with f=activity_form.title %}</div>
+      {% include "partials/field.html" with f=activity_form.description %}
+      <div><button class="btn" type="submit">{% icon "plus" "ico ico-sm" %} Add activity</button></div>
+    </form>
+    {% endif %}
+  </section>
+</div>
+
+{% if is_admin %}
+<dialog id="edit-class" {% if edit_form.errors %}data-autopen{% endif %}>
+  <h3>Edit {{ c.name }}</h3><p class="desc">Room details and teacher</p>
+  <form method="post" class="stack">{% csrf_token %}
+    <input type="hidden" name="action" value="edit">
+    {% include "partials/field.html" with f=edit_form.name %}
+    <div class="grid g2" style="gap:12px">{% include "partials/field.html" with f=edit_form.age_group %}{% include "partials/field.html" with f=edit_form.capacity %}</div>
+    {% include "partials/field.html" with f=edit_form.teacher %}
+    {% include "partials/field.html" with f=edit_form.tone %}
+    <div class="dialog-foot"><button type="button" class="btn btn-outline" data-close>Cancel</button><button class="btn" type="submit">Save</button></div>
+  </form>
+</dialog>
+{% endif %}
+{% endblock %}
