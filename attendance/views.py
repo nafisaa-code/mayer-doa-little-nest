@@ -57,3 +57,105 @@ def send_pickup_code_email(parent, child_name, code):
 </div></div>"""
     send_mail(f"Pickup code for {child_name}", text, None, [parent.email], html_message=html)
 
+
+
+
+# ---- sms helpers ----
+
+log = logging.getLogger("littlenest.sms")
+
+def mask_phone(phone):
+    digits = re.sub(r"\D", "", phone or "")
+    return f"+880 ••••-••{digits[-4:]}" if digits else "no number on file"
+
+def send_sms(phone, body):
+    """Returns True when the message was handed to the gateway."""
+    if settings.SMS_BACKEND == "console":
+        log.warning("[sms] to %s: %s", phone, body)
+        print(f"[sms] to {phone}: {body}")
+        return True
+    return _send_real(phone, body)
+
+def _send_real(phone, body):  # pragma: no cover - provider specific
+    raise NotImplementedError("Configure a real SMS provider in nursery/views.py")
+
+
+def _issue_code(request, child, channel):
+    """Phone is a demo (code shown on screen in DEBUG); email really sends. Returns an error string or None."""
+    code = f"{secrets.randbelow(900000) + 100000}"
+    parent = child.parent
+    if channel == "email":
+        if not parent.email:
+            return "The parent has no email on file."
+        try:
+            send_pickup_code_email(parent, child.first_name, code)
+        except Exception:  # SMTP/network errors
+            log.exception("Pickup email failed for child %s", child.pk)
+            return "Could not send the email. Try again or use phone."
+        messages.info(request, f"Code emailed to {mask_email(parent.email)}")
+    else:
+        send_sms(parent.phone, f"মায়ের দোয়া Little Nest: your pickup code for {child.first_name} is {code}. Valid 5 minutes.")
+        if settings.DEBUG and settings.SMS_BACKEND == "console":
+            messages.info(request, f"SMS to {mask_phone(parent.phone)} — demo code: {code}")
+        else:
+            messages.info(request, f"Code sent to {mask_phone(parent.phone)}")
+    PickupCode.objects.update_or_create(child=child, defaults={
+        "code_hash": make_password(code), "channel": channel, "phone": parent.phone, "attempts": 0,
+        "sent_at": timezone.now(), "expires_at": timezone.now() + timedelta(seconds=settings.OTP_TTL_SECONDS),
+    })
+    return None
+
+
+@staff_required
+def pickup(request, pk):
+    child = managed_child(request, pk)
+    if not child.parent:
+        messages.error(request, "This child has no parent on file to verify pickup.")
+        return redirect("child_detail", pk=child.pk)
+    otp = PickupCode.objects.filter(child=child).first()
+    error = None
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "send":
+            channel = "email" if request.POST.get("channel") == "email" else "phone"
+            if otp and (timezone.now() - otp.sent_at).total_seconds() < settings.OTP_RESEND_SECONDS:
+                error = "Please wait a few seconds before resending."
+            else:
+                error = _issue_code(request, child, channel)
+                if not error:
+                    return redirect("pickup", pk=child.pk)
+
+        elif action == "verify":
+            code = "".join(request.POST.getlist("d")) or request.POST.get("code", "")
+            by = request.POST.get("picked_up_by", "").strip() or child.parent.name
+            if not otp:
+                error = "No active code. Send a new one."
+            elif timezone.now() > otp.expires_at:
+                error = "This code has expired. Resend a new code."
+            elif otp.attempts >= settings.OTP_MAX_ATTEMPTS:
+                error = "Too many attempts. Resend a new code."
+            elif not check_password(code, otp.code_hash):
+                otp.attempts += 1
+                otp.save(update_fields=["attempts"])
+                error = f"Incorrect code. {settings.OTP_MAX_ATTEMPTS - otp.attempts} attempts left."
+            else:
+                t = now_time()
+                Attendance.objects.update_or_create(child=child, date=today(), defaults={"check_out": t, "picked_up_by": by})
+                PickupRecord.objects.create(child=child, date=today(), time=t, picked_up_by=by, verified_by=request.user)
+                otp.delete()
+                notify(child.parent, f"{child.first_name} was picked up by {by} at {t:%H:%M}", reverse("child_detail", args=[child.pk]))
+                messages.success(request, f"{child.first_name} checked out · pickup verified")
+                return redirect("dashboard")
+    resend_in = 0
+    if otp:
+        resend_in = max(0, settings.OTP_RESEND_SECONDS - int((timezone.now() - otp.sent_at).total_seconds()))
+    return render(request, "nursery/pickup.html", {
+        "child": child, "otp": otp, "error": error, "masked_phone": mask_phone(child.parent.phone) if child.parent.phone else "",
+        "masked_email": mask_email(child.parent.email) if child.parent.email else "",
+        "resend_in": resend_in, "digits": range(6),
+        "choosing": not otp or request.GET.get("choose") == "1",
+        "recent": PickupRecord.objects.filter(child__in=visible_children(request.user)).select_related("child", "verified_by")[:6],
+    })
+
+
+
