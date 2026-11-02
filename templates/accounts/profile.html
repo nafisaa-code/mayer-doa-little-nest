@@ -1,0 +1,33 @@
+{% extends "shell.html" %}
+{% load nest %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div style="max-width:768px">
+  <div class="page-head"><div><h1>Your profile</h1><p>Signed in as {{ user.get_role_display|lower }}</p></div></div>
+
+  <form method="post" class="panel pad stack rise">
+    {% csrf_token %}<input type="hidden" name="action" value="profile">
+    <div class="row" style="gap:16px">
+      {% user_avatar user 64 %}
+      <div><p style="font-family:var(--display);font-size:20px;font-weight:700">{{ user.name }}</p><p class="muted">{{ user.get_role_display }}</p></div>
+    </div>
+    <div class="grid g2" style="gap:12px">
+      <div style="grid-column:1/-1">{% include "partials/field.html" with f=profile_form.name %}</div>
+      {% include "partials/field.html" with f=profile_form.email %}
+      <div>{% include "partials/field.html" with f=profile_form.phone %}{% if user.is_parent %}<span class="help">Pickup codes are sent to this number.</span>{% endif %}</div>
+    </div>
+    <div><button class="btn" type="submit">Save profile</button></div>
+  </form>
+
+  <form method="post" class="panel pad stack mt rise">
+    {% csrf_token %}<input type="hidden" name="action" value="password">
+    <h2 style="font-size:18px">Change password</h2>
+    <div class="grid g2" style="gap:12px">
+      {% include "partials/field.html" with f=password_form.current %}
+      {% include "partials/field.html" with f=password_form.new %}
+    </div>
+    <div><button class="btn btn-outline" type="submit">Update password</button></div>
+  </form>
+
+</div>
+{% endblock %}

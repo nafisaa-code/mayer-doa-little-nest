@@ -71,3 +71,25 @@ def register_view(request):
 def logout_view(request):
     logout(request)
     return redirect("login")
+
+
+@login_required
+def profile_view(request):
+    profile_form = ProfileForm(instance=request.user)
+    password_form = PasswordChangeForm(request.user)
+    if request.method == "POST":
+        if request.POST.get("action") == "password":
+            password_form = PasswordChangeForm(request.user, request.POST)
+            if password_form.is_valid():
+                request.user.set_password(password_form.cleaned_data["new"])
+                request.user.save()
+                update_session_auth_hash(request, request.user)
+                messages.success(request, "Password updated")
+                return redirect("profile")
+        else:
+            profile_form = ProfileForm(request.POST, instance=request.user)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, "Profile saved")
+                return redirect("profile")
+    return render(request, "accounts/profile.html", {"profile_form": profile_form, "password_form": password_form})
