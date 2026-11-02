@@ -28,3 +28,26 @@
   <div class="panel stat rise" style="animation-delay:120ms"><span class="disc tone-mint">{% icon "moon" "ico ico-lg" %}</span><div><p>Average nap</p><strong>{% if s.avg_nap %}{{ s.avg_nap }} min{% else %}—{% endif %}</strong></div></div>
   <div class="panel stat rise" style="animation-delay:180ms"><span class="disc tone-sand">{% icon "calendar-days" "ico ico-lg" %}</span><div><p>Activities</p><strong>{{ s.activities }}</strong></div></div>
 </div>
+
+<div class="grid g2 xl mt">
+  <section class="panel pad rise">
+    <div class="panel-title"><h2>{% icon "chart-column" %}Attendance this week</h2><span class="muted small">Last week avg {% if insight.last_week is not None %}{{ insight.last_week|pct }}{% else %}—{% endif %}</span></div>
+    <div class="bars">
+      {% for b in bars %}
+      <div class="col {% if b.current %}cur{% endif %}">
+        <small class="tnum">{{ b.pct }}%</small>
+        <div class="track"><div class="b" style="height:{{ b.pct }}%" title="{{ b.present }} present"></div></div>
+        <small>{{ b.day|date:"D" }}</small>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  <section class="panel pad rise" style="animation-delay:80ms">
+    <div class="panel-title"><h2>{% icon "lightbulb" %}Smart Daily Insight</h2></div>
+    <p class="insight-text">{{ insight.text }}</p>
+    <div class="tip {{ insight.tip.tone }}">
+      {% if insight.tip.tone == "watch" %}{% icon "trending-down" "ico ico-lg" %}{% else %}{% icon "chart-column" "ico ico-lg" %}{% endif %}
+      <div><b>{{ insight.tip.title }}</b><p class="muted">{{ insight.tip.body }}</p></div>
+    </div>
+  </section>
+</div>
