@@ -11,3 +11,13 @@
         <option value="">All rooms</option>
         {% for c in classes %}<option value="{{ c.pk }}" {% if room == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }} Room</option>{% endfor %}
       </select>
+  </form>
+    {% endif %}
+    <div class="stepper">
+      <a href="?date={{ prev|date:'Y-m-d' }}&room={{ room }}" aria-label="Previous day">{% icon "chevron-left" "ico ico-sm" %}</a>
+      <b>{{ day|date:"D, j M" }}</b>
+      {% if next %}<a href="?date={{ next|date:'Y-m-d' }}&room={{ room }}" aria-label="Next day">{% icon "chevron-right" "ico ico-sm" %}</a>{% else %}<span class="off">{% icon "chevron-right" "ico ico-sm" %}</span>{% endif %}
+    </div>
+    <button class="btn btn-outline btn-lg" type="button" onclick="window.print()">{% icon "printer" "ico ico-sm" %} Print</button>
+  </div>
+</div>
