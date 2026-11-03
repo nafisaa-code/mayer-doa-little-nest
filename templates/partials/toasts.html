@@ -1,0 +1,11 @@
+{% load nest %}{% if messages %}
+<div class="toasts" role="status" aria-live="polite">
+  {% for m in messages %}
+  <div class="toast {{ m.tags }}">
+    {% if m.tags == "error" %}{% icon "circle-alert" %}{% elif m.tags == "info" %}{% icon "phone" %}{% else %}{% icon "check" %}{% endif %}
+    <span class="grow">{{ m }}</span>
+    <button type="button" aria-label="Dismiss">{% icon "x" "ico ico-sm" %}</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
