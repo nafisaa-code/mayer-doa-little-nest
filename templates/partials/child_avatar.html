@@ -1,0 +1,2 @@
+<span class="avatar {% if not child.photo %}tone-{{ child.avatar_tone }}{% endif %}" style="width:{{ size }}px;height:{{ size }}px;font-size:{{ font }}px">{% if child.photo %}<img src="{{ child.photo.url }}" alt="{{ child.full_name }}" loading="lazy">{% else %}<span aria-label="{{ child.full_name }}">{{ child.initials }}</span>{% endif %}</span>
+   
