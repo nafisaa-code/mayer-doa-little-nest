@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load static nest %}
+{% block title %}Not found{% endblock %}
+{% block body %}
+<div class="auth-form" style="min-height:100vh">
+  <div class="panel pad" style="max-width:440px;text-align:center">
+    <img src="{% static 'img/icon.png' %}" alt="" style="width:64px;height:64px;border-radius:16px;margin:0 auto 16px">
+    <h1 style="font-size:28px;font-weight:800">This page flew the nest</h1>
+    <p class="muted mt-sm">The page you're looking for doesn't exist or you don't have access to it.</p>
+    <a href="/" class="btn btn-lg mt">{% icon "house" %} Back to dashboard</a>
+  </div>
+</div>
+{% endblock %}
