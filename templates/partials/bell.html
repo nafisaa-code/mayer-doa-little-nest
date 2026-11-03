@@ -1,0 +1,20 @@
+{% load nest %}
+<details class="menu">
+  <summary class="bell" aria-label="Notifications">{% icon "bell" %}{% if unread_notifications %}<span class="badge">{{ unread_notifications }}</span>{% endif %}</summary>
+  <div class="menu-list notes-list">
+    <div class="row between" style="padding:6px 10px 8px">
+      <b style="font-family:var(--display)">Notifications</b>
+      {% if unread_notifications %}
+      <form method="post" action="{% url 'read_all_notifications' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="link" type="submit" style="padding:0;width:auto">Mark all read</button></form>
+      {% endif %}
+    </div>
+    {% for n in recent_notifications %}
+      <a href="{% url 'open_notification' n.pk %}" class="{% if not n.read %}unread{% endif %}">
+        <span class="pill-teal" style="width:8px;height:8px;border-radius:99px;margin-top:8px;flex-shrink:0;{% if n.read %}background:transparent{% else %}background:var(--teal){% endif %}"></span>
+        <span><span style="display:block">{{ n.text }}</span><span class="muted small">{{ n.created_at|timesince }} ago</span></span>
+      </a>
+    {% empty %}
+      <p class="muted small" style="padding:12px">You're all caught up.</p>
+    {% endfor %}
+  </div>
+</details>
