@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static nest %}
+{% block body %}
+{% with path=request.path %}
+<div class="shell">
+  <aside class="sidebar" aria-label="Sidebar">
+    <a href="{% url 'dashboard' %}" class="brand">
+      <img src="{% static 'img/icon.png' %}" alt="">
+      <span><b>মায়ের দোয়া Little Nest</b><small>Brighter days together</small></span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="{% url 'dashboard' %}" class="{% if path == '/' %}active{% endif %}">{% icon "house" %}<span>Dashboard</span></a>
+      <a href="{% url 'children' %}" class="{% if path|slice:':9' == '/children' %}active{% endif %}">{% icon "users" %}<span>{% if user.is_parent %}My children{% else %}Children{% endif %}</span></a>
+      {% if user.is_staff_member %}
+      <a href="{% url 'classes' %}" class="{% if path|slice:':8' == '/classes' %}active{% endif %}">{% icon "graduation-cap" %}<span>Classes</span></a>
+      {% endif %}
+      {% if user.is_admin_role %}
+      <a href="{% url 'users' %}" class="{% if path|slice:':6' == '/users' %}active{% endif %}">{% icon "shield-check" %}<span>Users</span></a>
+      {% endif %}
+      <a href="{% url 'inbox' %}" class="{% if path|slice:':9' == '/messages' %}active{% endif %}">{% icon "message-square-more" %}<span>Messages</span>{% if unread_messages %}<em class="badge">{{ unread_messages }}</em>{% endif %}</a>
+      <a href="{% url 'reports' %}" class="{% if path|slice:':8' == '/reports' %}active{% endif %}">{% icon "chart-column" %}<span>Reports</span></a>
+    </nav>
+    <div class="side-foot">
+      <a href="{% url 'profile' %}" class="me-card">
+        {% user_avatar user 46 %}
+        <span class="grow"><b>{{ user.name }}</b><span class="muted small">{{ user.get_role_display }}</span></span>
+        {% icon "chevron-right" "ico ico-sm muted" %}
+      </a>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">{% icon "log-out" %} Log out</button></form>
+    </div>
+  </aside>
+  <div class="scrim" data-drawer></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button type="button" class="btn btn-ghost btn-icon" data-drawer aria-label="Open menu">{% icon "menu" "ico ico-lg" %}</button>
+      <a href="{% url 'dashboard' %}" class="brand-mini"><img src="{% static 'img/icon.png' %}" alt="">মায়ের দোয়া Little Nest</a>
+      {% include "partials/bell.html" %}
+    </header>
+    <main class="main">
+      <div class="bell-wrap">{% include "partials/bell.html" %}</div>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endwith %}
+{% endblock %}
