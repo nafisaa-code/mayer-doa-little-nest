@@ -1,0 +1,2 @@
+{% if status == "out" %}<span class="pill pill-teal"><span class="dot"></span>Picked up {{ att.check_out|time:"H:i" }}</span>{% elif status == "napping" %}<span class="pill pill-blue"><span class="dot pulse"></span>Napping</span>{% elif status == "in" %}<span class="pill pill-green"><span class="dot"></span>Checked in</span>{% else %}<span class="pill pill-gray"><span class="dot"></span>Expected</span>{% endif %}
+
