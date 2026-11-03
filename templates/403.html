@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load static nest %}
+{% block title %}No access{% endblock %}
+{% block body %}
+<div class="auth-form" style="min-height:100vh">
+  <div class="panel pad" style="max-width:440px;text-align:center">
+    <div class="empty" style="padding:0 0 8px"><span class="disc">{% icon "lock" %}</span></div>
+    <h1 style="font-size:26px;font-weight:800">You don't have access</h1>
+    <p class="muted mt-sm">This area is limited to certain roles. Ask an admin if you think that's a mistake.</p>
+    <a href="/" class="btn btn-lg mt">{% icon "house" %} Back to dashboard</a>
+  </div>
+</div>
+{% endblock %}
